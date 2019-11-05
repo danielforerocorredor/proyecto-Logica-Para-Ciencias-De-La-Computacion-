@@ -4,14 +4,13 @@ import matplotlib._color_data as mcd
 import matplotlib.patches as patches
 from matplotlib.offsetbox import AnnotationBbox, OffsetImage
 
-def dibujar_tablero(f, n):
+def dibujar_tablero(x, c, n):
     # Visualiza un tablero dada una formula f
     # Input:
     #   - f, una lista de literales
     #   - n, un numero de identificacion del archivo
     # Output:
     #   - archivo de imagen tablero_n.png
-
     # Inicializo el plano que contiene la figura
     fig, axes = plt.subplots()
     axes.get_xaxis().set_visible(False)
@@ -78,20 +77,26 @@ def dibujar_tablero(f, n):
     direcciones[8] = [0.5, 0.165]
     direcciones[9] = [0.835, 0.165]
 
-    for l in f:
-        if f[l] != 0:
+    for l in x:
+        if x[l] != 0:
             ab = AnnotationBbox(imagebox, direcciones[int(l)], frameon=False)
             axes.add_artist(ab)
 
-    for i in range(1,4):
-        ab2 = AnnotationBbox(imagebox2, direcciones[int(i)], frameon=False)
-        axes.add_artist(ab2)
+    for k in c:
+        if c[k] != 0:
+            if c[k] == x[k]:
+                print("imposible ubicar O en la casilla "+ str(k) +" pues ya esta ocupada.")
+            else:
+                ab2 = AnnotationBbox(imagebox2, direcciones[int(k)], frameon=False)
+                axes.add_artist(ab2)
+
 
 
     #plt.show()
     fig.savefig("tablero_" + str(n) + ".png")
 
 
-f={1:0, 2:0, 3:0,4:0, 5:0, 6:1, 7:7, 8:0, 9:0}
+x={1:1, 2:0, 3:0, 4:0, 5:0, 6:0, 7:1, 8:0, 9:0}
+c={1:1, 2:1, 3:1, 4:0, 5:0, 6:0, 7:0, 8:0, 9:0}
 
-dibujar_tablero(f,121)
+dibujar_tablero(x, c,121)

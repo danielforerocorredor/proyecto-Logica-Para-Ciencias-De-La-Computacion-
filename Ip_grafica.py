@@ -4,6 +4,19 @@ import matplotlib._color_data as mcd
 import matplotlib.patches as patches
 from matplotlib.offsetbox import AnnotationBbox, OffsetImage
 
+###########################Reglas######################################
+Regla_disponibilidad = '(j=-a)Y(k=-b)Y(l=-c)Y(m=-d)Y(n=-e)Y(o=-f)Y(p=-g)Y(q=-h)Y(r=-i)Y(a=-j)Y(b=-k)Y(c=-l)Y(d=-m)Y(e=-n)Y(f=-o)Y(g=-p)Y(h=-q)Y(i=-r)'
+Regla_triqui_horizon = '(aYbYcY-dY-eY-fY-gY-hY-i)Y(-aY-bY-cYdYeYfY-gY-hY-i)Y(-aY-bY-cY-dY-eY-fYgYhYi)'
+Regla_triqui_vertical = '(aY-bY-cYdY-eY-fYgY-hY-i)Y(-aYbY-cY-dYeY-fY-gYhY-i)Y(-aY-bYcY-dY-eYfY-gY-hYi)'
+Regla_triqui_diagonal = '(aY-bY-cY-dYeY-fY-gY-hYi)Y(-aY-bYcY-dYeY-fYgY-hY-i)'
+Regla_cond_inicial = '(nYl)'
+
+Regla_total = Regla_disponibilidad + 'Y' + Regla_triqui_horizon + 'Y' + Regla_triqui_vertical + 'Y' + Regla_triqui_diagonal + 'Y' + Regla_cond_inicial
+
+
+
+###########################Dibujar_Tablero######################################
+
 def dibujar_tablero(x, c, n):
     # Visualiza un tablero dada una formula f
     # Input:
@@ -94,9 +107,32 @@ def dibujar_tablero(x, c, n):
 
     #plt.show()
     fig.savefig("tablero_" + str(n) + ".png")
-
+    
+def tablero_Os(regla, tab):
+    for c in regla:
+        if c == 'j':
+            tab[1] = 1
+        elif c == 'k':
+            tab[2] = 1 
+        elif c == 'l':
+            tab[3] = 1 
+        elif c == 'm':
+            tab[4] = 1
+        elif c == 'n':
+            tab[5] = 1 
+        elif c == 'o':
+            tab[6] = 1
+        elif c == 'p':
+            tab[7] = 1
+        elif c == 'q':
+            tab[8] = 1
+        elif c == 'r':
+            tab[9] = 1 
+    return tab
 
 x={1:1, 2:0, 3:0, 4:0, 5:0, 6:0, 7:1, 8:0, 9:0}
-c={1:1, 2:1, 3:1, 4:0, 5:0, 6:0, 7:0, 8:0, 9:0}
+c={1:0, 2:0, 3:0, 4:0, 5:0, 6:0, 7:0, 8:0, 9:0}
+
+tablero_Os(Regla_cond_inicial, c)
 
 dibujar_tablero(x, c,121)

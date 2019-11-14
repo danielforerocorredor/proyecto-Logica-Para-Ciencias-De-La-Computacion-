@@ -4,113 +4,6 @@ import matplotlib._color_data as mcd
 import matplotlib.patches as patches
 from matplotlib.offsetbox import AnnotationBbox, OffsetImage
 
-letrasProposicionalesA = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r']
-conectivos = ['O', 'Y', '>']
-niveles = []
-
-# ------------------------------REGLAS-----------------------------------
-Regla_disponibilidad = '(j>-a)Y(k>-b)Y(l>-c)Y(m>-d)Y(n>-e)Y(o>-f)Y(p>-g)Y(q>-h)Y(r>-i)Y(a>-j)Y(b>-k)Y(c>-l)Y(d>-m)Y(e>-n)Y(f>-o)Y(g>-p)Y(h>-q)Y(i>-r)'
-Regla_triqui_horizon = '(aYbYcY-dY-eY-fY-gY-hY-i)Y(-aY-bY-cYdYeYfY-gY-hY-i)Y(-aY-bY-cY-dY-eY-fYgYhYi)'
-Regla_triqui_vertical = '(aY-bY-cYdY-eY-fYgY-hY-i)Y(-aYbY-cY-dYeY-fY-gYhY-i)Y(-aY-bYcY-dY-eYfY-gY-hYi)'
-Regla_triqui_diagonal = '(aY-bY-cY-dYeY-fY-gY-hYi)Y(-aY-bYcY-dYeY-fYgY-hY-i)'
-Regla_cond_inicial = '(nYl)'
-
-Regla_total = '(' + Regla_disponibilidad + ')Y(' + Regla_triqui_horizon + ')Y(' + Regla_triqui_vertical + ')Y(' + Regla_triqui_diagonal + ')Y(' + Regla_cond_inicial + ')'
-
-# -----------------------------ARBOLES-------------------------------
-
-class Tree(object):
-    def __init__(self, label, left, right):
-        self.left = left
-        self.right = right
-        self.label = label
-
-def inorder(A):
-    if A.right == None:
-        return A.label
-    elif A.label == "-":
-        return '-'+ inorder(A.right)
-    elif A.label in conectivos:
-        return '(' + inorder(A.left) + A.label + inorder(A.right) + ')'
-
-def string2tree(A, LetrasProposicionales):
-    conectivos = ["O", "Y", ">"]
-    pila = []
-    for c in A:
-        if c in LetrasProposicionales:
-            pila.append(Tree(c, None, None))
-        elif c == "-":
-            formulaaux = Tree(c, None, pila[-1])
-            del pila[-1]
-            pila.append(formulaaux)
-        elif c in conectivos:
-            formulaaux = Tree(c, pila[-1], pila[-2])
-            del pila[-1]
-            del pila[-1]
-            pila.append(formulaaux)
-    return pila[-1]
-
-def Contador_parentesis(formula):
-    if(len(formula)>1):
-        contador = 0
-        for a in range(0,len(formula)):
-            if(formula[a]=='('):
-                contador += 1
-            elif(formula[a]==')'):
-                contador -= 1
-            niveles.append(contador)
-
-        for b in range(0, len(niveles)):
-            if((niveles[b]==0) and (formula[b] in conectivos)):
-                if((formula[b]=='-')):
-                    if(not(formula[b+1]=='(')):
-                        continue
-                    else:
-                        niveles.clear()
-                        return b
-                else:
-                    niveles.clear()
-                    return b
-
-        for c in range(0, len(formula)):
-            if(formula[c] in conectivos):
-                niveles.clear()
-                return c
-    return 0
-
-def polaco(formula):
-    if(len(formula)<=2):
-        return formula
-    elif(not(Contador_parentesis(formula))):
-        derecha = ""
-        for b in range(2, len(formula)-1):
-                derecha+=formula[b]
-        return formula[Contador_parentesis(formula)] + polaco(derecha)
-
-    else:
-        izquierda = ""
-        derecha = ""
-        for a in range(0, Contador_parentesis(formula)):
-            izquierda+=formula[a]
-        for b in range(Contador_parentesis(formula)+1, len(formula)):
-            derecha+=formula[b]
-        izquierda_nueva = izquierda
-        derecha_nueva = derecha
-        if(izquierda[0]=='(' and izquierda[len(izquierda)-1]==')'):
-            izquierda_nueva = ""
-            for a in range(1, len(izquierda)-1):
-                izquierda_nueva+=izquierda[a]
-        if(derecha[0]=='(' and derecha[len(derecha)-1]==')'):
-            derecha_nueva = ""
-            for b in range(1, len(derecha)-1):
-                derecha_nueva+=derecha[b]
-
-        # print("izquierda: " + izquierda_nueva)
-        # print("derecha: " + derecha_nueva)
-
-        return formula[Contador_parentesis(formula)] + polaco(izquierda_nueva) + polaco(derecha_nueva)
-
-
 # ------------------------------TSEITIN-----------------------------------
 def enFNC(A):
     assert(len(A)==4 or len(A)==7), u"Fórmula incorrecta!"
@@ -152,7 +45,7 @@ def Tseitin(A, letrasProposicionalesA):
             atomo = letrasProposicionalesB[i]
             pila = pila[:-1]
             pila.append(atomo)
-            pila.append(atomo + '=' + '-' + s)
+            L.append(atomo + '=' + '-' + s)
             A = A[1:]
             if len(A) > 0:
                 s = A[0]
@@ -423,11 +316,53 @@ def tablero_Os(regla, tab):
             tab[9] = 1
     return tab
 
+
+# ------------------------------EJECUCION-----------------------------------
+
+letrasProposicionalesA = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r']
+conectivos = ['O', 'Y', '>']
+
+# ------------------------------REGLAS-----------------------------------
+
+Regla_disponibilidad = '((j>-a)Y(k>-b)Y(l>-c)Y(m>-d)Y(n>-e)Y(o>-f)Y(p>-g)Y(q>-h)Y(r>-i)Y(a>-j)Y(b>-k)Y(c>-l)Y(d>-m)Y(e>-n)Y(f>-o)Y(g>-p)Y(h>-q)Y(i>-r))'
+Regla_triqui_horizon = '(((aY(bYc)Y(-dY-e)Y(-fY-g)Y(-hY-i))O(-aY(-bY-c)Y(dYe)Y(fY-g)Y(-hY-i)))O(-aY(-bY-c)Y(-dY-e)Y(-fYg)Y(hYi)))'
+Regla_triqui_vertical = '((aY(-bY-c)Y(dY-e)Y(-fYg)Y(-hY-i))O(-aY(bY-c)Y(-dYe)Y(-fY-g)Y(hY-i))O(-aY(-bYc)Y(-dY-e)Y(fY-g)Y(-hYi)))'
+Regla_triqui_diagonal = '((aY(-bY-c)Y(-dYe)Y(-fY-g)Y(-hYi))O(-aY(-bYc)Y(-dYe)Y(-fYg)Y(-hY-i)))'
+Regla_cond_inicial = '(nYl)'
+
+Regla_total = '((' + Regla_disponibilidad + ')Y(' + Regla_triqui_vertical + '))'
+
+
+
 x={1:1, 2:0, 3:0, 4:0, 5:0, 6:0, 7:1, 8:0, 9:0}
 c={1:0, 2:0, 3:0, 4:0, 5:0, 6:0, 7:0, 8:0, 9:0}
 
 tablero_Os(Regla_cond_inicial, c)
 dibujar_tablero(x, c,121)
 
-formula_polaco = polaco(Regla_triqui_diagonal)
-print(formula_polaco)
+# formula = Tseitin(Regla_triqui_diagonal, letrasProposicionalesA)
+# print(formula)
+# print('\n')
+#
+# formula2 = formaClausal(formula)
+# print(formula2)
+
+# formula2 = Tseitin(Regla_triqui_vertical, letrasProposicionalesA)
+# print(formula2)
+# print('\n')
+#
+# formula3 = Tseitin(Regla_triqui_horizon, letrasProposicionalesA)
+# print(formula3)
+# print('\n')
+#
+formula = Tseitin(Regla_disponibilidad, letrasProposicionalesA)
+print(formula)
+print('\n')
+
+formula2 = formaClausal(formula)
+print(formula2)
+print('\n')
+
+
+# formula_Final = Tseitin(Regla_total, letrasProposicionalesA)
+# print(formula_Final)

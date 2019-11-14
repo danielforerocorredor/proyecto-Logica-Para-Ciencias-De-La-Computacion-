@@ -4,18 +4,313 @@ import matplotlib._color_data as mcd
 import matplotlib.patches as patches
 from matplotlib.offsetbox import AnnotationBbox, OffsetImage
 
-###########################Reglas######################################
-Regla_disponibilidad = '(j=-a)Y(k=-b)Y(l=-c)Y(m=-d)Y(n=-e)Y(o=-f)Y(p=-g)Y(q=-h)Y(r=-i)Y(a=-j)Y(b=-k)Y(c=-l)Y(d=-m)Y(e=-n)Y(f=-o)Y(g=-p)Y(h=-q)Y(i=-r)'
+letrasProposicionalesA = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r']
+conectivos = ['O', 'Y', '>']
+niveles = []
+
+# ------------------------------REGLAS-----------------------------------
+Regla_disponibilidad = '(j>-a)Y(k>-b)Y(l>-c)Y(m>-d)Y(n>-e)Y(o>-f)Y(p>-g)Y(q>-h)Y(r>-i)Y(a>-j)Y(b>-k)Y(c>-l)Y(d>-m)Y(e>-n)Y(f>-o)Y(g>-p)Y(h>-q)Y(i>-r)'
 Regla_triqui_horizon = '(aYbYcY-dY-eY-fY-gY-hY-i)Y(-aY-bY-cYdYeYfY-gY-hY-i)Y(-aY-bY-cY-dY-eY-fYgYhYi)'
 Regla_triqui_vertical = '(aY-bY-cYdY-eY-fYgY-hY-i)Y(-aYbY-cY-dYeY-fY-gYhY-i)Y(-aY-bYcY-dY-eYfY-gY-hYi)'
 Regla_triqui_diagonal = '(aY-bY-cY-dYeY-fY-gY-hYi)Y(-aY-bYcY-dYeY-fYgY-hY-i)'
 Regla_cond_inicial = '(nYl)'
 
-Regla_total = Regla_disponibilidad + 'Y' + Regla_triqui_horizon + 'Y' + Regla_triqui_vertical + 'Y' + Regla_triqui_diagonal + 'Y' + Regla_cond_inicial
+Regla_total = '(' + Regla_disponibilidad + ')Y(' + Regla_triqui_horizon + ')Y(' + Regla_triqui_vertical + ')Y(' + Regla_triqui_diagonal + ')Y(' + Regla_cond_inicial + ')'
+
+# -----------------------------ARBOLES-------------------------------
+
+class Tree(object):
+    def __init__(self, label, left, right):
+        self.left = left
+        self.right = right
+        self.label = label
+
+def inorder(A):
+    if A.right == None:
+        return A.label
+    elif A.label == "-":
+        return '-'+ inorder(A.right)
+    elif A.label in conectivos:
+        return '(' + inorder(A.left) + A.label + inorder(A.right) + ')'
+
+def string2tree(A, LetrasProposicionales):
+    conectivos = ["O", "Y", ">"]
+    pila = []
+    for c in A:
+        if c in LetrasProposicionales:
+            pila.append(Tree(c, None, None))
+        elif c == "-":
+            formulaaux = Tree(c, None, pila[-1])
+            del pila[-1]
+            pila.append(formulaaux)
+        elif c in conectivos:
+            formulaaux = Tree(c, pila[-1], pila[-2])
+            del pila[-1]
+            del pila[-1]
+            pila.append(formulaaux)
+    return pila[-1]
+
+def Contador_parentesis(formula):
+    if(len(formula)>1):
+        contador = 0
+        for a in range(0,len(formula)):
+            if(formula[a]=='('):
+                contador += 1
+            elif(formula[a]==')'):
+                contador -= 1
+            niveles.append(contador)
+
+        for b in range(0, len(niveles)):
+            if((niveles[b]==0) and (formula[b] in conectivos)):
+                if((formula[b]=='-')):
+                    if(not(formula[b+1]=='(')):
+                        continue
+                    else:
+                        niveles.clear()
+                        return b
+                else:
+                    niveles.clear()
+                    return b
+
+        for c in range(0, len(formula)):
+            if(formula[c] in conectivos):
+                niveles.clear()
+                return c
+    return 0
+
+def polaco(formula):
+    if(len(formula)<=2):
+        return formula
+    elif(not(Contador_parentesis(formula))):
+        derecha = ""
+        for b in range(2, len(formula)-1):
+                derecha+=formula[b]
+        return formula[Contador_parentesis(formula)] + polaco(derecha)
+
+    else:
+        izquierda = ""
+        derecha = ""
+        for a in range(0, Contador_parentesis(formula)):
+            izquierda+=formula[a]
+        for b in range(Contador_parentesis(formula)+1, len(formula)):
+            derecha+=formula[b]
+        izquierda_nueva = izquierda
+        derecha_nueva = derecha
+        if(izquierda[0]=='(' and izquierda[len(izquierda)-1]==')'):
+            izquierda_nueva = ""
+            for a in range(1, len(izquierda)-1):
+                izquierda_nueva+=izquierda[a]
+        if(derecha[0]=='(' and derecha[len(derecha)-1]==')'):
+            derecha_nueva = ""
+            for b in range(1, len(derecha)-1):
+                derecha_nueva+=derecha[b]
+
+        # print("izquierda: " + izquierda_nueva)
+        # print("derecha: " + derecha_nueva)
+
+        return formula[Contador_parentesis(formula)] + polaco(izquierda_nueva) + polaco(derecha_nueva)
 
 
+# ------------------------------TSEITIN-----------------------------------
+def enFNC(A):
+    assert(len(A)==4 or len(A)==7), u"Fórmula incorrecta!"
+    B = ''
+    p = A[0]
+    if "-" in A:
+        q = A[-1]
+        B = "-"+p+"O-"+q+"Y"+p+"O"+q
+    elif "Y" in A:
+        q = A[3]
+        r = A[5]
+        B = q+"O-"+p+"Y"+r+"O-"+p+"Y-"+q+"O-"+r+"O"+p
+    elif "O" in A:
+        q = A[3]
+        r = A[5]
+        B = q+"O"+p+"Y-"+r+"O"+p+"Y"+q+"O"+r+"O-"+p
+    elif ">" in A:
+        q = A[3]
+        r = A[5]
+        B = q+"O"+p+"Y-"+r+"O"+p+"Y-"+q+"O"+r+"O-"+p
+    else:
+        print(u'Error enENC(): Fórmula incorrecta!')
 
-###########################Dibujar_Tablero######################################
+    return B
+
+
+def Tseitin(A, letrasProposicionalesA):
+    letrasProposicionalesB = [chr(x) for x in range(256, 300)]
+    assert(not bool(set(letrasProposicionalesA) & set(letrasProposicionalesB))), u"¡Hay letras proposicionales en común!"
+
+    L = []
+    pila = []
+    i = -1
+    s = A[0]
+    letrasProposicionales = letrasProposicionalesA + letrasProposicionalesB
+    while len(A) > 0:
+        if s in letrasProposicionales and len(pila) > 0 and pila[-1] == '-':
+            i += 1
+            atomo = letrasProposicionalesB[i]
+            pila = pila[:-1]
+            pila.append(atomo)
+            pila.append(atomo + '=' + '-' + s)
+            A = A[1:]
+            if len(A) > 0:
+                s = A[0]
+        elif s == ')':
+            w = pila[-1]
+            o = pila[-2]
+            v = pila[-3]
+            pila = pila[:len(pila)-4]
+            i += 1
+            atomo = letrasProposicionalesB[i]
+            L.append(atomo + '=' + '(' + v + o + w + ')')
+            s = atomo
+        else:
+            pila.append(s)
+            A = A[1:]
+            if len(A) > 0:
+                s = A[0]
+    b = ''
+    if i < 0:
+        atomo = pila[-1]
+    else:
+        atomo = letrasProposicionalesB[i]
+    for x in L:
+        y = enFNC(x)
+        b = b + 'Y' + y
+    b = atomo + b
+
+
+    return b
+
+
+def Clausula(C):
+
+    L = []
+    while len(C) > 0:
+        s = C[0]
+        if s == 'O':
+            C = C[1:]
+        elif s == '-':
+            literal = s + C[1]
+            L.append(literal)
+            C = C[2:]
+        else:    #Convierte un Tree en una cadena de símbolos
+    #Input: A, formula como Tree
+    #Output: formula como string
+            L.append(s)
+            C = C[1:]
+
+
+    return L
+
+
+def formaClausal(A):
+
+    L = []
+    i = 0
+    while len(A) > 0:
+        if i >= len(A):
+            L.append(Clausula(A))
+            A= []
+        elif A[i] == 'Y':
+            L.append(Clausula(A[:i]))
+            A = A[i+1:]
+            i = 0
+        else:
+            i += 1
+
+    return L
+
+# --------------------------------DPLL------------------------------------
+
+
+def clausulaUnitaria(lista):
+    for i in lista:
+        if (len(i)==1):
+            return i
+        elif (len(i)==2 and i[0]=="-"):
+            return i
+    return None
+
+def clausulaVacia(lista):
+    for i in lista:
+        if(i==''):
+            return(True)
+    return False
+
+
+def unitPropagate(lista,interps):
+    x = clausulaUnitaria(lista)
+    while(x!= None and clausulaVacia(lista)!=True):
+        if (len(x)==1):
+            interps[str(x)]=1
+            j = 0
+            for i in range(0,len(lista)):
+                lista[i]=re.sub('-'+x,'',lista[i])
+            for i in range(0,len(lista)):
+                if(x in lista[i-j]):
+                    lista.remove(lista[i-j])
+                    j+=1
+        else:
+            interps[str(x[1])]=0
+            j = 0
+            for i in range(0,len(lista)):
+                if(x in lista[i-j]):
+                    lista.remove(lista[i-j])
+                    j+=1
+            for i in range(0,len(lista)):
+                lista[i]=re.sub(x[1],'',lista[i])
+        x = clausulaUnitaria(lista)
+    return(lista, interps)
+
+
+def literal_complemento(lit):
+    if lit[0] == "-":
+        return lit[1]
+    else:
+        lit = "-" + lit
+        return lit
+
+
+def DPLL(lista, interps):
+    lista, interps = unitPropagate(lista,interps)
+    if(len(lista)==0):
+        listaFinal = lista
+        interpsFinal = interps
+        return(lista,interps)
+    elif("" in lista):
+        listaFinal = lista
+        interpsFinal = interps
+        return (lista,{})
+    else:
+        listaTemp = [x for x in lista]
+        for l in listaTemp[0]:
+            if (len(listaTemp)==0):
+                return (listaTemp, interps)
+            if (l not in interps.keys() and l!='-'):
+                break
+        listaTemp.insert(0,l)
+        lista2, inter2 = DPLL(listaTemp, interps)
+        if inter2 == {}:
+            listaTemp = [x for x in lista]
+            a =literal_complemento(l)
+            listaTemp.insert(0,a)
+            lista2, inter2 = DPLL(listaTemp, interps)
+        return lista2, inter2
+
+
+def interpsFinal(interps):
+    interpsf = {i: interps[i] for i in LetrasProposicionales if i in interps}
+    return interpsf
+
+
+def DPLLResultado(lista):
+    lista, inter = DPLL(lista,{})
+    interpretacion = interpsFinal(inter)
+    return interpretacion
+
+# ----------------------REPRESENTACIÓN GRÁFICA---------------------------
 
 def dibujar_tablero(x, c, n):
     # Visualiza un tablero dada una formula f
@@ -92,7 +387,7 @@ def dibujar_tablero(x, c, n):
 
     for l in x:
         if x[l] != 0:
-            ab = AnnotationBbox(imagebox, direcciones[int(l)], frameon=False)
+            ab = AnnotationBbox(imagebox, direcciones[int(l)], frameon = False)
             axes.add_artist(ab)
 
     for k in c:
@@ -100,26 +395,24 @@ def dibujar_tablero(x, c, n):
             if c[k] == x[k]:
                 print("imposible ubicar O en la casilla "+ str(k) +" pues ya esta ocupada.")
             else:
-                ab2 = AnnotationBbox(imagebox2, direcciones[int(k)], frameon=False)
+                ab2 = AnnotationBbox(imagebox2, direcciones[int(k)], frameon = False)
                 axes.add_artist(ab2)
-
-
 
     #plt.show()
     fig.savefig("tablero_" + str(n) + ".png")
-    
+
 def tablero_Os(regla, tab):
     for c in regla:
         if c == 'j':
             tab[1] = 1
         elif c == 'k':
-            tab[2] = 1 
+            tab[2] = 1
         elif c == 'l':
-            tab[3] = 1 
+            tab[3] = 1
         elif c == 'm':
             tab[4] = 1
         elif c == 'n':
-            tab[5] = 1 
+            tab[5] = 1
         elif c == 'o':
             tab[6] = 1
         elif c == 'p':
@@ -127,12 +420,14 @@ def tablero_Os(regla, tab):
         elif c == 'q':
             tab[8] = 1
         elif c == 'r':
-            tab[9] = 1 
+            tab[9] = 1
     return tab
 
 x={1:1, 2:0, 3:0, 4:0, 5:0, 6:0, 7:1, 8:0, 9:0}
 c={1:0, 2:0, 3:0, 4:0, 5:0, 6:0, 7:0, 8:0, 9:0}
 
 tablero_Os(Regla_cond_inicial, c)
-
 dibujar_tablero(x, c,121)
+
+formula_polaco = polaco(Regla_triqui_diagonal)
+print(formula_polaco)

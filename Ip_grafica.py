@@ -117,91 +117,193 @@ def formaClausal(A):
 
 # --------------------------------DPLL------------------------------------
 
+#
+# def clausulaUnitaria(lista):
+#     for i in lista:
+#         if (len(i)==1):
+#             return i
+#         elif (len(i)==2 and i[0]=="-"):
+#             return i
+#     return None
+#
+# def clausulaVacia(lista):
+#     for i in lista:
+#         if(i==''):
+#             return(True)
+#     return False
+#
+#
+# def unitPropagate(lista,interps):
+#     x = clausulaUnitaria(lista)
+#     while(x!= None and clausulaVacia(lista)!=True):
+#         if (len(x)==1):
+#             interps[str(x)]=1
+#             j = 0
+#             for i in range(0,len(lista)):
+#                 lista[i]=re.sub('-'+x,'',lista[i])
+#             for i in range(0,len(lista)):
+#                 if(x in lista[i-j]):
+#                     lista.remove(lista[i-j])
+#                     j+=1
+#         else:
+#             interps[str(x[1])]=0
+#             j = 0
+#             for i in range(0,len(lista)):
+#                 if(x in lista[i-j]):
+#                     lista.remove(lista[i-j])
+#                     j+=1
+#             for i in range(0,len(lista)):
+#                 lista[i]=re.sub(x[1],'',lista[i])
+#         x = clausulaUnitaria(lista)
+#     return(lista, interps)
+#
+#
+# def literal_complemento(lit):
+#     if lit[0] == "-":
+#         return lit[1]
+#     else:
+#         lit = "-" + lit
+#         return lit
+#
+#
+# def DPLL(lista, interps):
+#     lista, interps = unitPropagate(lista,interps)
+#     if(len(lista)==0):
+#         listaFinal = lista
+#         interpsFinal = interps
+#         return(lista,interps)
+#     elif("" in lista):
+#         listaFinal = lista
+#         interpsFinal = interps
+#         return (lista,{})
+#     else:
+#         listaTemp = [x for x in lista]
+#         for l in listaTemp[0]:
+#             if (len(listaTemp)==0):
+#                 return (listaTemp, interps)
+#             if (l not in interps.keys() and l!='-'):
+#                 break
+#         listaTemp.insert(0,l)
+#         lista2, inter2 = DPLL(listaTemp, interps)
+#         if inter2 == {}:
+#             listaTemp = [x for x in lista]
+#             a =literal_complemento(l)
+#             listaTemp.insert(0,a)
+#             lista2, inter2 = DPLL(listaTemp, interps)
+#         return lista2, inter2
+#
+#
+# def interpsFinal(interps):
+#     interpsf = {i: interps[i] for i in LetrasProposicionales if i in interps}
+#     return interpsf
+#
+#
+# def DPLLResultado(lista):
+#     lista, inter = DPLL(lista,{})
+#     interpretacion = interpsFinal(inter)
+#     return interpretacion
 
-def clausulaUnitaria(lista):
-    for i in lista:
-        if (len(i)==1):
-            return i
-        elif (len(i)==2 and i[0]=="-"):
-            return i
-    return None
-
-def clausulaVacia(lista):
-    for i in lista:
-        if(i==''):
-            return(True)
+def r1(S):
+    for i in S:
+        if len(i) == 1:
+            return True
     return False
+def r2(S,I):
+    l = ""
+    temp = ""
+    I2 = I.keys()
+    for i in S:
+        for j in i:
+            if len(j) != 1:
+                temp = j[1]
+            else:
+                temp = j
+            if temp not in I2:
+                l = j
+                print(l)
+                for x in S:
+                    if l in x:
+                        print(x)
+                        S.remove(x)
 
-
-def unitPropagate(lista,interps):
-    x = clausulaUnitaria(lista)
-    while(x!= None and clausulaVacia(lista)!=True):
-        if (len(x)==1):
-            interps[str(x)]=1
-            j = 0
-            for i in range(0,len(lista)):
-                lista[i]=re.sub('-'+x,'',lista[i])
-            for i in range(0,len(lista)):
-                if(x in lista[i-j]):
-                    lista.remove(lista[i-j])
-                    j+=1
-        else:
-            interps[str(x[1])]=0
-            j = 0
-            for i in range(0,len(lista)):
-                if(x in lista[i-j]):
-                    lista.remove(lista[i-j])
-                    j+=1
-            for i in range(0,len(lista)):
-                lista[i]=re.sub(x[1],'',lista[i])
-        x = clausulaUnitaria(lista)
-    return(lista, interps)
-
-
-def literal_complemento(lit):
-    if lit[0] == "-":
-        return lit[1]
-    else:
-        lit = "-" + lit
-        return lit
-
-
-def DPLL(lista, interps):
-    lista, interps = unitPropagate(lista,interps)
-    if(len(lista)==0):
-        listaFinal = lista
-        interpsFinal = interps
-        return(lista,interps)
-    elif("" in lista):
-        listaFinal = lista
-        interpsFinal = interps
-        return (lista,{})
-    else:
-        listaTemp = [x for x in lista]
-        for l in listaTemp[0]:
-            if (len(listaTemp)==0):
-                return (listaTemp, interps)
-            if (l not in interps.keys() and l!='-'):
+                if '-' not in l:
+                    I[l] = 1
+                    lc = '-' + l
+                    for e in S:
+                        if lc in e:
+                            e.remove(lc)
+                if '-' in l:
+                    I[l[1]] = 0
+                    lc = l[1]
+                    for y in S:
+                        if lc in y:
+                            y.remove(lc)
                 break
-        listaTemp.insert(0,l)
-        lista2, inter2 = DPLL(listaTemp, interps)
-        if inter2 == {}:
-            listaTemp = [x for x in lista]
-            a =literal_complemento(l)
-            listaTemp.insert(0,a)
-            lista2, inter2 = DPLL(listaTemp, interps)
-        return lista2, inter2
+
+    return S,I
 
 
-def interpsFinal(interps):
-    interpsf = {i: interps[i] for i in LetrasProposicionales if i in interps}
-    return interpsf
+def unitPropagate(S,I):
+    while(r1(S)==True):
+        l = ""
+        for x in S:
+            if len(x) == 1:
+                l = x[0]
+                #print(l,x)
+                S.remove(x)
+                break
+
+        if '-' in l:
+            I[l[1]] = 0
+            lc = l[1]
+            for j in S:
+                if l in j:
+                    S.remove(j)
+                if lc in j:
+                    j.remove(lc)
+
+        if '-' not in l:
+            I[l] = 1
+            lc = '-' + l
+            for i in S:
+                if l in i:
+                    S.remove(i)
+                if lc in i:
+                    i.remove(lc)
+
+        unitPropagate(S,I)
 
 
-def DPLLResultado(lista):
-    lista, inter = DPLL(lista,{})
-    interpretacion = interpsFinal(inter)
-    return interpretacion
+    return S,I
+
+
+def DPLL(S,I):
+    if r1(S):
+        unitPropagate(S,I)
+
+
+    if len(S)==1:
+        x = S[0]
+        for i in x:
+            if i not in I.keys():
+                l = i
+                if '-' not in l:
+                    I[l] = 1
+                    S.remove(x)
+                    break
+                if '-' in l:
+                    I[l[1]] = 0
+                    S.remove(x)
+                    break
+
+
+    if [] in S:
+        return "Insatisfacible", I
+    if len(S) == 0:
+        return "Satisfacible", I
+    else:
+        r2(S,I)
+    return DPLL(S,I)
 
 # ----------------------REPRESENTACIÓN GRÁFICA---------------------------
 
@@ -355,12 +457,17 @@ dibujar_tablero(x, c,121)
 # print(formula3)
 # print('\n')
 #
-formula = Tseitin(Regla_disponibilidad, letrasProposicionalesA)
+formula = Tseitin(Regla_cond_inicial, letrasProposicionalesA)
 print(formula)
 print('\n')
 
 formula2 = formaClausal(formula)
 print(formula2)
+print('\n')
+
+y = {}
+formula3 = DPLL(formula2, y)
+print(formula3)
 print('\n')
 
 

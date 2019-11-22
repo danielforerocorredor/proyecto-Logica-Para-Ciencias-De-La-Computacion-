@@ -9,199 +9,121 @@ def enFNC(A):
     assert(len(A)==4 or len(A)==7), u"Fórmula incorrecta!"
     B = ''
     p = A[0]
+    # print('p', p)
     if "-" in A:
         q = A[-1]
+        # print('q', q)
         B = "-"+p+"O-"+q+"Y"+p+"O"+q
     elif "Y" in A:
         q = A[3]
+        # print('q', q)
         r = A[5]
+        # print('r', r)
         B = q+"O-"+p+"Y"+r+"O-"+p+"Y-"+q+"O-"+r+"O"+p
     elif "O" in A:
         q = A[3]
+        # print('q', q)
         r = A[5]
+        # print('r', r)
         B = q+"O"+p+"Y-"+r+"O"+p+"Y"+q+"O"+r+"O-"+p
     elif ">" in A:
         q = A[3]
+        # print('q', q)
         r = A[5]
+        # print('r', r)
         B = q+"O"+p+"Y-"+r+"O"+p+"Y-"+q+"O"+r+"O-"+p
     else:
         print(u'Error enENC(): Fórmula incorrecta!')
 
     return B
 
-
 def Tseitin(A, letrasProposicionalesA):
-    letrasProposicionalesB = [chr(x) for x in range(256, 300)]
-    assert(not bool(set(letrasProposicionalesA) & set(letrasProposicionalesB))), u"¡Hay letras proposicionales en común!"
+	letrasProposicionalesB = [chr(x) for x in range(256, 1200)]
+	#assert(not bool(set(letrasProposicionalesA) & set(letrasProposicionalesB)))
+	L = []
+	Pila = [] # Inicializamos pila
+	i = -1 # Inicializamos contador de variables nuevas
+	s = A[0] # Inicializamos sımbolo de trabajo
+	atomos = letrasProposicionalesA + letrasProposicionalesB
+	while (len(A) > 0):
+		#print('A', A, ' L', L, ' Pila', Pila, ' i', i, ' s', s)
+		if s in atomos and len(Pila)>0 and Pila[-1] =='-':
+			i += 1
+			atomo = letrasProposicionalesB[i]
+			Pila = Pila[:-1]
+			Pila.append(atomo)
+			L.append(atomo + '=' + '-' + s)
+			A = A[1:]
+			if len(A) > 0:
+				s = A[0]
 
-    L = []
-    pila = []
-    i = -1
-    s = A[0]
-    letrasProposicionales = letrasProposicionalesA + letrasProposicionalesB
-    while len(A) > 0:
-        if s in letrasProposicionales and len(pila) > 0 and pila[-1] == '-':
-            i += 1
-            atomo = letrasProposicionalesB[i]
-            pila = pila[:-1]
-            pila.append(atomo)
-            L.append(atomo + '=' + '-' + s)
-            A = A[1:]
-            if len(A) > 0:
-                s = A[0]
-        elif s == ')':
-            w = pila[-1]
-            o = pila[-2]
-            v = pila[-3]
-            pila = pila[:len(pila)-4]
-            i += 1
-            atomo = letrasProposicionalesB[i]
-            L.append(atomo + '=' + '(' + v + o + w + ')')
-            s = atomo
-        else:
-            pila.append(s)
-            A = A[1:]
-            if len(A) > 0:
-                s = A[0]
-    b = ''
-    if i < 0:
-        atomo = pila[-1]
-    else:
-        atomo = letrasProposicionalesB[i]
-    for x in L:
-        y = enFNC(x)
-        b = b + 'Y' + y
-    b = atomo + b
+		elif s == ')':
+			w = Pila[-1]
+			O = Pila[-2]
+			v = Pila[-3]
+			Pila = Pila[:len(Pila)-4]
+			i += 1
+			atomo = letrasProposicionalesB[i]
+			L.append(atomo +"="+"(" + v + O + w + ")")
+			s = atomo
 
+		else:
+			Pila.append(s)
 
-    return b
+			A = A[1:]
+			if len(A) > 0:
+				s = A[0]
+			#print('A', A)
 
+	B = ""
+	if i < 0:
+		atomo = Pila[-1]
+	else:
+		atomo = letrasProposicionalesB[i]
+
+	for x in L:
+		y = enFNC(x)
+		B += "Y" + y
+
+	B = atomo + B
+	return B
 
 def Clausula(C):
-
-    L = []
-    while len(C) > 0:
-        s = C[0]
-        if s == 'O':
-            C = C[1:]
-        elif s == '-':
+    L=[]
+    while len(C)>0:
+        s=C[0]
+        if s == "O":
+            C=C[1:]
+        elif s== "-":
             literal = s + C[1]
             L.append(literal)
             C = C[2:]
-        else:    #Convierte un Tree en una cadena de símbolos
-    #Input: A, formula como Tree
-    #Output: formula como string
+        else:
             L.append(s)
             C = C[1:]
 
-
     return L
 
-
+# Algoritmo para obtencion de forma clausal
+# Input: A (cadena) en notacion inorder en FNC
+# Output: L (lista), lista de listas de literales
 def formaClausal(A):
-
-    L = []
+    l = []
     i = 0
-    while len(A) > 0:
+    while len(A)> 0:
         if i >= len(A):
-            L.append(Clausula(A))
-            A= []
-        elif A[i] == 'Y':
-            L.append(Clausula(A[:i]))
-            A = A[i+1:]
-            i = 0
+            l.append(Clausula(A))
+            A = []
         else:
-            i += 1
-
-    return L
+            if A[i] == 'Y':
+                l.append(Clausula(A[:i]))
+                A = A[i+1:]
+                i = 0
+            else:
+                i+=1
+    return l
 
 # --------------------------------DPLL------------------------------------
-
-#
-# def clausulaUnitaria(lista):
-#     for i in lista:
-#         if (len(i)==1):
-#             return i
-#         elif (len(i)==2 and i[0]=="-"):
-#             return i
-#     return None
-#
-# def clausulaVacia(lista):
-#     for i in lista:
-#         if(i==''):
-#             return(True)
-#     return False
-#
-#
-# def unitPropagate(lista,interps):
-#     x = clausulaUnitaria(lista)
-#     while(x!= None and clausulaVacia(lista)!=True):
-#         if (len(x)==1):
-#             interps[str(x)]=1
-#             j = 0
-#             for i in range(0,len(lista)):
-#                 lista[i]=re.sub('-'+x,'',lista[i])
-#             for i in range(0,len(lista)):
-#                 if(x in lista[i-j]):
-#                     lista.remove(lista[i-j])
-#                     j+=1
-#         else:
-#             interps[str(x[1])]=0
-#             j = 0
-#             for i in range(0,len(lista)):
-#                 if(x in lista[i-j]):
-#                     lista.remove(lista[i-j])
-#                     j+=1
-#             for i in range(0,len(lista)):
-#                 lista[i]=re.sub(x[1],'',lista[i])
-#         x = clausulaUnitaria(lista)
-#     return(lista, interps)
-#
-#
-# def literal_complemento(lit):
-#     if lit[0] == "-":
-#         return lit[1]
-#     else:
-#         lit = "-" + lit
-#         return lit
-#
-#
-# def DPLL(lista, interps):
-#     lista, interps = unitPropagate(lista,interps)
-#     if(len(lista)==0):
-#         listaFinal = lista
-#         interpsFinal = interps
-#         return(lista,interps)
-#     elif("" in lista):
-#         listaFinal = lista
-#         interpsFinal = interps
-#         return (lista,{})
-#     else:
-#         listaTemp = [x for x in lista]
-#         for l in listaTemp[0]:
-#             if (len(listaTemp)==0):
-#                 return (listaTemp, interps)
-#             if (l not in interps.keys() and l!='-'):
-#                 break
-#         listaTemp.insert(0,l)
-#         lista2, inter2 = DPLL(listaTemp, interps)
-#         if inter2 == {}:
-#             listaTemp = [x for x in lista]
-#             a =literal_complemento(l)
-#             listaTemp.insert(0,a)
-#             lista2, inter2 = DPLL(listaTemp, interps)
-#         return lista2, inter2
-#
-#
-# def interpsFinal(interps):
-#     interpsf = {i: interps[i] for i in LetrasProposicionales if i in interps}
-#     return interpsf
-#
-#
-# def DPLLResultado(lista):
-#     lista, inter = DPLL(lista,{})
-#     interpretacion = interpsFinal(inter)
-#     return interpretacion
 
 def r1(S):
     for i in S:
@@ -457,7 +379,7 @@ dibujar_tablero(x, c,121)
 # print(formula3)
 # print('\n')
 #
-formula = Tseitin(Regla_cond_inicial, letrasProposicionalesA)
+formula = Tseitin(Regla_triqui_diagonal, letrasProposicionalesA)
 print(formula)
 print('\n')
 
